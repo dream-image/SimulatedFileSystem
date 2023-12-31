@@ -3,3 +3,13 @@
 因为是虚拟的文件系统，在写的时候，是直接读写的，没有用缓冲区，并且备份fat2表没用,
 
 用户打开文件表也没怎么使用
+
+
+
+![picture](./picture1.png)
+
+![picture](./picture2.png)
+
+![picture](./picture3.png)
+
+![picture](./picture4.png)
