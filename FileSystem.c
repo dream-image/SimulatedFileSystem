@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 #define NONE "\033[m"
 #define RED "\033[0;32;31m"
 #define LIGHT_RED "\033[1;31m"
@@ -35,9 +34,8 @@
 #define NORMALFILE 1
 #define FILENAME "/root/fileSystem/myVfile.VF"
 /*
-    说明：我基本采用全部遍历的方式，以降低编写的时候人为计算错误率
 
- */
+*/
 
 typedef struct FCB
 {
@@ -79,8 +77,7 @@ typedef struct BLOCK0
     unsigned short root;       // 根目录的起始盘块号
     unsigned char *startblock; // 虚拟磁盘上数据区开始的位置
 } block0;
-unsigned char *myvhard; // 指向虚拟磁盘的起始地址
-// unsigned openfilelist[MAXOPENFILE]; // 打开表文件数组
+unsigned char *myvhard;      // 指向虚拟磁盘的起始地址
 int curdir;                  // 当前文件描述符
 char currentdir[80] = "";    // 当前目录
 unsigned char *startp;       // 数据区开始的位置
@@ -99,8 +96,7 @@ void initFCB(struct FCB *F, int first, struct FCB *parent);                     
 void setFileTime(struct FCB *F, struct FCB *obj);                                // 初始化FCB时间或者是复制FCB时间
 void recombination(char *pathname, char result[][8], int length, char *newPath); // 从文件路径中解析出路径
 void initNormalFCB(struct FCB *F, int first, char *name, char *exname);          // 初始化普通文件的FCB
-void initUserOpenList();
-
+void initUserOpenList(); //初始化用户打开表
 
 void startsys();
 void my_format();
@@ -251,22 +247,22 @@ int isCurrentDir(char *str)
     int num = split(str, result, '/');
     if (num == 0)
     {
-        printf("文件路径有误");
+        printf(RED "文件路径有误\n" NONE);
         return 0;
     }
     if (num > 2)
     {
-        printf("只允许对当前目录下子文件操作");
+        printf(RED "只允许对当前目录下子文件操作\n" NONE);
         return 0;
     }
     if (num == 2 && (str[0] != '.' || str[1] != '/'))
     {
-        printf("只允许对当前目录下子文件操作");
+        printf(RED "只允许对当前目录下子文件操\n" NONE);
         return 0;
     }
     if (num == 1 && str[0] == '/')
     {
-        printf("只允许对当前目录下子文件操作");
+        printf(RED "只允许对当前目录下子文件操作\n" NONE);
         return 0;
     }
     return 1;
@@ -459,7 +455,8 @@ int my_getline(char *line, int max_size)
     return len;
 }
 
-void initUserOpenList(){
+void initUserOpenList()
+{
     // 初始化链表
     openFileList = (useropen *)malloc(sizeof(useropen));
     openFileList->topenfile = 0;
@@ -502,8 +499,8 @@ void startsys()
     startp = myvhard + (1 + 2 * ROOTBLOCKNUM) * BLOCKSIZE;
     currentBlock = startp;
     initUserOpenList();
-    strcpy(currentdir,"/root");
-    printf(YELLOW"文件系统初始化完毕\n"NONE);
+    strcpy(currentdir, "/root");
+    printf(YELLOW "文件系统初始化完毕\n" NONE);
 }
 
 void my_format()
@@ -512,7 +509,7 @@ void my_format()
     // printf("myvhard:%d\n",myvhard);
     unsigned char *p = myvhard;
     block0 *b0 = (block0 *)(p);
-    strcat(b0->infomation, "磁盘块共1000个，每个1024个字节");
+    strcat(b0->infomation, "磁盘块共1000个，每个1024个字节\n");
     p += BLOCKSIZE; // 跑到fat表初始地址
     // printf("p:%d\n",p);
     fat *fat1 = (fat *)(p);
@@ -554,7 +551,7 @@ void my_format()
     initUserOpenList();
 
     // printf("%d\n",currentBlock);
-    printf("bi~bi~bi~bi~······初始化完毕······\n");
+    printf(YELLOW "bi~bi~bi~bi~······初始化完毕······\n" NONE);
     // printf("/root>");
 };
 
@@ -594,10 +591,12 @@ void ls(char *str)
             {
                 char name[8] = "", type[5] = "", space[12] = "";
                 getFileInfo(p, name, type, space);
-                if(p->attribute==1){
+                if (p->attribute == 1)
+                {
                     printf("%-8s    <%s>          %-12s%s    %s\n", name, type, space, p->time, p->date);
                 }
-                else printf("%-8s    <%s>           %-12s%s    %s\n", name, type, space, p->time, p->date);
+                else
+                    printf("%-8s    <%s>           %-12s%s    %s\n", name, type, space, p->time, p->date);
             }
             p++;
         }
@@ -624,10 +623,12 @@ void ls(char *str)
                 char name[8] = "", type[5] = "", space[12] = "";
                 getFileInfo(p, name, type, space);
                 // printf("%d\n",i);
-                if(p->attribute==1){
+                if (p->attribute == 1)
+                {
                     printf("%-8s    <%s>          %-12s%s    %s\n", name, type, space, p->time, p->date);
                 }
-                else printf("%-8s    <%s>           %-12s%s    %s\n", name, type, space, p->time, p->date);
+                else
+                    printf("%-8s    <%s>           %-12s%s    %s\n", name, type, space, p->time, p->date);
             }
             p++;
         }
@@ -846,9 +847,9 @@ int mkdir(char *str)
     fcb *x = p;
     for (int i = 0; i < BLOCKSIZE / sizeof(fcb); i++)
     {
-        if (x->attribute == 0 && strcmp(x->filename, str) == 0)
+        if (x->attribute == 0 && strcmp(x->filename, str) == 0 && x->free == 1)
         {
-            printf("文件已存在\n");
+            printf("文件夹已存在\n");
             return 0;
         }
         x++;
@@ -865,7 +866,7 @@ int mkdir(char *str)
             setFileTime(p, NULL);
             if (getFreeBlock(p) == 0)
             {
-                printf("抱歉，磁盘空间不足，请扩容");
+                printf("抱歉，磁盘空间不足，请扩容\n");
                 return 0;
             }
             // printf("%d\n",p->first);
@@ -898,7 +899,7 @@ int rmdir(char *str, int mode)
     fcb *p = (fcb *)(char *)currentBlock;
     for (int i = 0; i < BLOCKSIZE / sizeof(fcb); i++)
     {
-        if (p->attribute == 0 && strcmp(p->filename, str) == 0)
+        if (p->attribute == 0 && strcmp(p->filename, str) == 0 && p->free == 1)
         {
             fcb *q = (fcb *)(startp + BLOCKSIZE * (p->first));
             if (mode == 0)
@@ -923,6 +924,8 @@ int rmdir(char *str, int mode)
                     q++;
                 }
                 p->free = 0;
+                // unsigned char* x=startp+BLOCKSIZE*p->first;
+                // memset(x,0,BLOCKSIZE);
             }
             else if (mode == 1)
             {
@@ -931,6 +934,7 @@ int rmdir(char *str, int mode)
             }
             break;
         }
+        // p->free = 0;
         p++;
     }
     if (mode == 0)
@@ -954,6 +958,7 @@ void rmAll(struct FCB *F)
         {
             F->free == 0;
             fcb *p = (fcb *)(startp + BLOCKSIZE * (F->first));
+
             rmAll(p);
         }
         else if (F->free == 1 && F->attribute == 1)
@@ -962,10 +967,15 @@ void rmAll(struct FCB *F)
             fat *start = (fat *)startFAT, *p = (fat *)startFAT, *next = (fat *)startFAT;
             p += F->first;
             next = p;
+            unsigned char *y = startp + BLOCKSIZE * F->first;
+            memset(y, 0, BLOCKSIZE);
             while (p->id != END)
             {
                 next = start + p->id;
+                y = startp + BLOCKSIZE * p->id;
+                memset(y, 0, BLOCKSIZE);
                 p->id = FREE;
+
                 p = next;
             }
             p->id = FREE;
@@ -974,6 +984,7 @@ void rmAll(struct FCB *F)
         {
             F->free = 0;
         }
+        F->free = 0;
         F++;
     }
     return;
@@ -1307,6 +1318,7 @@ int removeFile(char *str)
         if (p->free == 1 && strcmp(p->filename, filename) == 0 && p->attribute == 1)
         {
             useropen *open = openFileList, *preT, *target, *tail;
+            p->free = 0;
             int flag = 0;
             // printf("%d %s %d\n",open->fd,open->filename,open->topenfile);
             while (open != NULL)
@@ -1327,6 +1339,7 @@ int removeFile(char *str)
                         {
                             target = open;
                             open->topenfile = 0;
+
                             flag = 1;
                         }
                     }
@@ -1360,6 +1373,8 @@ int removeFile(char *str)
             int first = p->first;
             fat *f = (fat *)(startFAT);
             f += first;
+            unsigned char *x = startp + BLOCKSIZE * first;
+
             fat *q = f;
             while (f->id != END)
             {
@@ -1369,6 +1384,8 @@ int removeFile(char *str)
                 q = f;
             }
             f->id = FREE;
+            unsigned char *y = startp + BLOCKSIZE * first;
+            memset(y, 0, BLOCKSIZE);
             back();
             return 1;
         }
@@ -1457,7 +1474,7 @@ int writeFile(char *str, int mode)
     useropen *open = openFileList;
     for (int i = 0; i < BLOCKSIZE / sizeof(fcb); i++)
     {
-        printf("%s %s\n", p->filename, filename);
+        // printf("%s %s\n", p->filename, filename);
         if (p->free == 1 && strcmp(p->filename, filename) == 0 && p->attribute == 1)
         {
             // printf("找到对应的FCB了");
@@ -1598,14 +1615,14 @@ int writeFile(char *str, int mode)
         {
             offset = p->length;
         }
-        else if (mode == 1)
+        else if (mode == 0)
         {
             offset = open->count;
         }
 
-        printf("offset:%d\n", offset);
+        // printf("offset:%d\n", offset);
         open->count = 0;
-        p->length = 0;
+        p->length = offset;
         while (offset > BLOCKSIZE - 1)
         {
             block = startp + BLOCKSIZE * (f->id);
@@ -1856,7 +1873,7 @@ int readFile(char *str, int len)
 
 void exitsys()
 {
-    FILE *fp;
+    FILE *fp;,
     fp = fopen(FILENAME, "w");
     fwrite(myvhard, SIZE, 1, fp);
     free(myvhard);
@@ -1866,7 +1883,7 @@ void exitsys()
 void getHelp()
 {
     printf("------------------------------------------------------------------------\n");
-    printf(GREEN"[]为可选,<>必选,*支持跨域\n");
+    printf(GREEN "[]为可选,<>必选,*支持跨域\n");
     printf("*ls         [路径名]            列出目录\n");
     printf("*cd         <路径名>            进入目录\n");
     printf("mkdir       <文件名名>          新建文件夹\n");
@@ -1876,7 +1893,8 @@ void getHelp()
     printf("*open       <文件名>            打开文件(若文件表满则移除最久未打开的)\n");
     printf("*write      <文件名> [参数]     默认-w全部覆盖写 -r继上次读末尾写 -a末尾写\n");
     printf("*read       <文件名> [长度]     读取文件\n");
-    printf("exit                           退出系统\n"NONE);
+    printf("*remove     <文件名>            删除文件\n");
+    printf("exit                           退出系统\n" NONE);
 }
 
 int main()
@@ -1888,7 +1906,7 @@ int main()
     int cmdLen = 0;
     while (1)
     {
-        printf(LIGHT_PURPLE"%s>"NONE, currentdir);
+        printf(LIGHT_PURPLE "%s>" NONE, currentdir);
         memset(result, 0, sizeof(result));
         memset(commond, 0, sizeof(commond));
         my_getline(commond, 20);
@@ -1900,7 +1918,7 @@ int main()
         // printf("@%d@ @%s@ @%s@ @%s@\n",length,result[0],result[1],result[2]);
         if (length == 0)
         {
-            printf(RED"命令错误\n"NONE);
+            // printf(RED"命令错误\n"NONE);
             continue;
         }
         if (strcmp(result[0], "ls") == 0)
@@ -1990,7 +2008,7 @@ int main()
         }
         else
         {
-            printf(RED"命令不存在\n"NONE);
+            printf(RED "命令不存在\n" NONE);
         }
     }
     // ls("");
